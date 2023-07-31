@@ -7,6 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <CoreData/CoreData.h>
 
 @interface FBCDAppDelegate : UIResponder <UIApplicationDelegate>
 
@@ -20,3 +21,4 @@
 - (NSURL *)applicationDocumentsDirectory;
 
 @end
+
