@@ -7,11 +7,10 @@
 
 #import <CoreData/CoreData.h>
 
-typedef struct _options {
-    char * passphrase;
-    char * database_location;
-    int * cache_size;
-} EncryptedStoreOptions;
+typedef NS_ENUM(NSInteger, EncryptedStoreError) {
+    EncryptedStoreErrorIncorrectPasscode = 6000,
+    EncryptedStoreErrorMigrationFailed
+};
 
 extern NSString * const EncryptedStoreType;
 extern NSString * const EncryptedStorePassphraseKey;
@@ -20,75 +19,59 @@ extern NSString * const EncryptedStoreErrorMessageKey;
 extern NSString * const EncryptedStoreDatabaseLocation;
 extern NSString * const EncryptedStoreCacheSize;
 extern NSString * const EncryptedStoreFileManagerOption;
-typedef NS_ENUM(NSInteger, EncryptedStoreError)
-{
-    EncryptedStoreErrorIncorrectPasscode = 6000,
-    EncryptedStoreErrorMigrationFailed
-};
 
-@interface EncryptedStoreFileManagerConfiguration : NSObject
-#pragma mark - Initialization
-- (instancetype)initWithOptions:(NSDictionary *)options;
-#pragma mark - Properties
-@property (nonatomic, readwrite) NSFileManager *fileManager;
-@property (nonatomic, readwrite) NSBundle *bundle;
-@property (nonatomic, readwrite) NSString *databaseName;
-@property (nonatomic, readwrite) NSString *databaseExtension;
-@property (nonatomic, readonly) NSString *databaseFilename;
-@property (nonatomic, readwrite) NSURL *databaseURL;
+@interface EncryptedStoreOptions : NSObject
+
+@property (nonatomic, copy) NSString *passphrase;
+@property (nonatomic, copy) NSString *databaseLocation;
+@property (nonatomic, assign) int cacheSize;
+
 @end
 
-@interface EncryptedStoreFileManagerConfiguration (OptionsKeys)
-+ (NSString *)optionFileManager;
-+ (NSString *)optionBundle;
-+ (NSString *)optionDatabaseName;
-+ (NSString *)optionDatabaseExtension;
-+ (NSString *)optionDatabaseURL;
+@interface EncryptedStoreFileManagerConfiguration : NSObject
+
+- (instancetype)initWithOptions:(NSDictionary *)options;
+
+@property (nonatomic, strong) NSFileManager *fileManager;
+@property (nonatomic, strong) NSBundle *bundle;
+@property (nonatomic, copy) NSString *databaseName;
+@property (nonatomic, copy) NSString *databaseExtension;
+@property (nonatomic, readonly) NSString *databaseFilename;
+@property (nonatomic, strong) NSURL *databaseURL;
+
 @end
 
 @interface EncryptedStoreFileManager : NSObject
-#pragma mark - Initialization
+
 + (instancetype)defaultManager;
 - (instancetype)initWithConfiguration:(EncryptedStoreFileManagerConfiguration *)configuration;
-
-#pragma mark - Setup
 - (void)setupDatabaseWithOptions:(NSDictionary *)options error:(NSError * __autoreleasing*)error;
 
-#pragma mark - Getters
-@property (nonatomic, readwrite) EncryptedStoreFileManagerConfiguration *configuration;
+@property (nonatomic, strong) EncryptedStoreFileManagerConfiguration *configuration;
 @property (nonatomic, readonly) NSURL *databaseURL;
+
 @end
 
 @interface EncryptedStoreFileManager (FileManagerExtensions)
+
 @property (nonatomic, readonly) NSURL *applicationSupportURL;
+
 - (void)setAttributes:(NSDictionary *)attributes ofItemAtURL:(NSURL *)url error:(NSError * __autoreleasing*)error;
+
 @end
 
 @interface EncryptedStore : NSIncrementalStore
-#pragma mark - Initialization
+
 + (NSPersistentStoreCoordinator *)makeStoreWithOptions:(NSDictionary *)options managedObjectModel:(NSManagedObjectModel *)objModel;
-+ (NSPersistentStoreCoordinator *)makeStoreWithStructOptions:(EncryptedStoreOptions *) options managedObjectModel:(NSManagedObjectModel *)objModel;
-+ (NSPersistentStoreCoordinator *)makeStore:(NSManagedObjectModel *) objModel
-                                   passcode:(NSString *) passcode;
++ (NSPersistentStoreCoordinator *)makeStoreWithStructOptions:(EncryptedStoreOptions *)options managedObjectModel:(NSManagedObjectModel *)objModel;
++ (NSPersistentStoreCoordinator *)makeStore:(NSManagedObjectModel *)objModel passcode:(NSString *)passcode;
 
-//+ (NSPersistentStoreCoordinator *)makeStoreWithOptions:(NSDictionary *)options managedObjectModel:(NSManagedObjectModel *)objModel error:(NSError * __autoreleasing*)error;
-+ (NSPersistentStoreCoordinator *)makeStoreWithStructOptions:(EncryptedStoreOptions *) options managedObjectModel:(NSManagedObjectModel *)objModel error:(NSError * __autoreleasing*)error;
-+ (NSPersistentStoreCoordinator *)makeStore:(NSManagedObjectModel *) objModel
-                                   passcode:(NSString *) passcode error:(NSError * __autoreleasing*)error;
++ (NSPersistentStoreCoordinator *)makeStoreWithStructOptions:(EncryptedStoreOptions *)options managedObjectModel:(NSManagedObjectModel *)objModel error:(NSError * __autoreleasing*)error;
++ (NSPersistentStoreCoordinator *)makeStore:(NSManagedObjectModel *)objModel passcode:(NSString *)passcode error:(NSError * __autoreleasing*)error;
 
-#pragma mark - Passphrase manipulation
-#pragma mark - Public
-
-/**
- @discussion Check old passphrase and if success change old passphrase to new passphrase.
- 
- @param oldPassphrase The old passhrase with which database was previously opened.
- @param newPassphrase The new passhrase which is desired for database.
- @param error Inout error.
- @return The status of operation.
- */
 - (BOOL)checkAndChangeDatabasePassphrase:(NSString *)oldPassphrase toNewPassphrase:(NSString *)newPassphrase error:(NSError *__autoreleasing*)error;
 
+@end
 
 /**
  @discussion Check database passphrase.
